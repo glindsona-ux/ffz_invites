@@ -9,7 +9,7 @@ DB_PATH = os.getenv("DB_PATH", "data/invites.db")
 GUILD_ID = int(os.getenv("GUILD_ID", "1465329771696361546"))
 LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "1499209881301815339"))
 COR_FFZ = 0x5865F2 # azul discord
-FFZ_THUMBNAIL = "https://i.imgur.com/placeholder.png" # troca pela tua imagem se quiser
+FFZ_THUMBNAIL = "https://i.imgur.com/gLKi0lg.jpeg"  # troca pela tua imagem se quiser
 
 async def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
