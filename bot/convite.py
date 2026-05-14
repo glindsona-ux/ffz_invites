@@ -1,13 +1,18 @@
 import discord
 import asyncio
 import aiosqlite
+import os
 from datetime import datetime
-from.config import IDS, COR_FFZ, FFZ_THUMBNAIL
 
 invites_cache = {}
-DB_PATH = "invites.db"
+DB_PATH = os.getenv("DB_PATH", "data/invites.db")
+GUILD_ID = int(os.getenv("GUILD_ID", "1465329771696361546"))
+LOG_CHANNEL_ID = int(os.getenv("LOG_CHANNEL_ID", "1499209881301815339"))
+COR_FFZ = 0x5865F2 # azul discord
+FFZ_THUMBNAIL = "https://i.imgur.com/placeholder.png" # troca pela tua imagem se quiser
 
 async def init_db():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS invites_data (
@@ -26,10 +31,10 @@ async def atualizar_cache(guild):
         print(f"[CONVITE] ERRO ao atualizar cache: {e}")
         invites_cache[guild.id] = []
 
-async def enviar_log_convite(guild, embed):
-    canal = guild.get_channel(IDS.get("convidados"))
+async def enviar_log_convite(bot, embed):
+    canal = bot.get_channel(LOG_CHANNEL_ID)
     if not canal:
-        print(f"[CONVITE] ERRO: Canal 'convidados' não encontrado.")
+        print(f"[CONVITE] ERRO: Canal {LOG_CHANNEL_ID} não encontrado.")
         return
     try:
         await canal.send(embed=embed)
@@ -54,7 +59,7 @@ async def setup_convite(bot):
 
     @bot.event
     async def on_member_join(member):
-        if member.bot:
+        if member.bot or member.guild.id!= GUILD_ID:
             return
 
         await asyncio.sleep(2)
@@ -94,11 +99,11 @@ async def setup_convite(bot):
             embed.description += f"\n\n📊 **Convites do recrutador**\n`0`"
 
         embed.set_footer(text=f"FFZ E-SPORTS | {member.guild.member_count} membros | {datetime.now().strftime('%d/%m %H:%M')}")
-        await enviar_log_convite(member.guild, embed)
+        await enviar_log_convite(bot, embed)
 
     @bot.event
     async def on_member_remove(member):
-        if member.bot:
+        if member.bot or member.guild.id!= GUILD_ID:
             return
 
         inviter_id = None
@@ -123,7 +128,7 @@ async def setup_convite(bot):
             embed.description += f"\n\n🎯 **Foi recrutado por**\n`Não identificado`"
 
         embed.set_footer(text=f"FFZ E-SPORTS | {member.guild.member_count} membros | {datetime.now().strftime('%d/%m %H:%M')}")
-        await enviar_log_convite(member.guild, embed)
+        await enviar_log_convite(bot, embed)
 
     print("[CONVITE] Setup finalizado!")
 
