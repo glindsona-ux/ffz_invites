@@ -28,4 +28,4 @@ intents.guilds = True
 intents.invites = True
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="!", int
+bot = commands.Bot(command_prefix="!", intents=intents)
