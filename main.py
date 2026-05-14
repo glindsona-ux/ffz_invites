@@ -8,7 +8,7 @@ from flask import Flask
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 
-# Servidor web pra manter online
+# Servidor web pra manter online no Render
 app = Flask('')
 
 @app.route('/')
@@ -29,3 +29,15 @@ intents.invites = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f"Bot online como {bot.user}")
+
+async def main():
+    await bot.load_extension("bot.convite")
+    await bot.start(TOKEN)
+
+keep_alive()
+import asyncio
+asyncio.run(main())
