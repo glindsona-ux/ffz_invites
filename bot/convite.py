@@ -353,7 +353,7 @@ class SelectCanalLogs(discord.ui.ChannelSelect):
 class ViewCanais(discord.ui.View):
     """View com os 3 selects de canal."""
     def __init__(self):
-        super().__init__(timeout=120)
+        super().__init__(timeout=None)  # CORRIGIDO: era timeout=120
         self.add_item(SelectCanalEntrada())
         self.add_item(SelectCanalSaida())
         self.add_item(SelectCanalLogs())
@@ -361,14 +361,16 @@ class ViewCanais(discord.ui.View):
     @discord.ui.button(label="◀ Voltar ao Painel", style=discord.ButtonStyle.secondary, row=3)
     async def voltar(self, interaction: discord.Interaction, button: discord.ui.Button):
         cfg = await get_config(interaction.guild_id)
-        embed, view = build_painel_principal(interaction.guild, cfg)
-        await interaction.response.edit_message(embed=embed, view=view)
+        embed1, embed2, view1, view2 = build_painel_principal(interaction.guild, cfg)
+        # Edita a mensagem atual de volta ao painel de mensagens
+        await interaction.response.edit_message(embed=embed1, view=view1)
 
 
-class ViewPainelPrincipal(discord.ui.View):
-    """View principal do painel com todos os botões."""
+# ── PAINEL 1: Mensagens + Canais + Preview ─────────────────
+class ViewPainelMensagens(discord.ui.View):
+    """Painel 1 — configuração de mensagens e canais."""
     def __init__(self, cfg: dict):
-        super().__init__(timeout=300)
+        super().__init__(timeout=None)  # CORRIGIDO: timeout=None — botões nunca expiram
         self.cfg = cfg
 
     @discord.ui.button(label="✏️ Msg Entrada", style=discord.ButtonStyle.success, row=0)
@@ -391,24 +393,7 @@ class ViewPainelPrincipal(discord.ui.View):
         cfg = await get_config(interaction.guild_id)
         await interaction.response.send_modal(ModalMensagemSaida(cfg))
 
-    @discord.ui.button(label="📝 Rodapé", style=discord.ButtonStyle.secondary, row=1)
-    async def rodape(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalFooter(cfg))
-
-    @discord.ui.button(label="😀 Emojis", style=discord.ButtonStyle.secondary, row=1)
-    async def emojis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalEmojis(cfg))
-
-    @discord.ui.button(label="🏆 Ver Ranking", style=discord.ButtonStyle.secondary, row=1)
-    async def ranking(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer(ephemeral=True)
-        cfg = await get_config(interaction.guild_id)
-        embed = await build_ranking_embed(interaction.guild, cfg)
-        await interaction.followup.send(embed=embed, ephemeral=True)
-
-    @discord.ui.button(label="👁️ Preview Entrada", style=discord.ButtonStyle.secondary, row=2)
+    @discord.ui.button(label="👁️ Preview Entrada", style=discord.ButtonStyle.secondary, row=1)
     async def preview_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
         cfg = await get_config(interaction.guild_id)
         body = (
@@ -428,7 +413,7 @@ class ViewPainelPrincipal(discord.ui.View):
             content="👁️ **Preview da mensagem de entrada:**", embed=embed, ephemeral=True
         )
 
-    @discord.ui.button(label="👁️ Preview Saída", style=discord.ButtonStyle.secondary, row=2)
+    @discord.ui.button(label="👁️ Preview Saída", style=discord.ButtonStyle.secondary, row=1)
     async def preview_saida(self, interaction: discord.Interaction, button: discord.ui.Button):
         cfg = await get_config(interaction.guild_id)
         body = (
@@ -447,8 +432,33 @@ class ViewPainelPrincipal(discord.ui.View):
         )
 
 
+# ── PAINEL 2: Personalização + Ranking ────────────────────
+class ViewPainelPersonalizacao(discord.ui.View):
+    """Painel 2 — emojis, rodapé e ranking."""
+    def __init__(self, cfg: dict):
+        super().__init__(timeout=None)  # CORRIGIDO: timeout=None — botões nunca expiram
+        self.cfg = cfg
+
+    @discord.ui.button(label="📝 Rodapé", style=discord.ButtonStyle.secondary, row=0)
+    async def rodape(self, interaction: discord.Interaction, button: discord.ui.Button):
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalFooter(cfg))
+
+    @discord.ui.button(label="😀 Emojis", style=discord.ButtonStyle.secondary, row=0)
+    async def emojis(self, interaction: discord.Interaction, button: discord.ui.Button):
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalEmojis(cfg))
+
+    @discord.ui.button(label="🏆 Ver Ranking", style=discord.ButtonStyle.secondary, row=0)
+    async def ranking(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        cfg = await get_config(interaction.guild_id)
+        embed = await build_ranking_embed(interaction.guild, cfg)
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
+
 def build_painel_principal(guild: discord.Guild, cfg: dict):
-    """Constrói a embed principal do painel com status atual."""
+    """Constrói as duas embeds do painel com status atual."""
 
     def canal_str(channel_id) -> str:
         if not channel_id:
@@ -456,17 +466,17 @@ def build_painel_principal(guild: discord.Guild, cfg: dict):
         ch = guild.get_channel(channel_id)
         return ch.mention if ch else f"`ID: {channel_id}`"
 
-    embed = discord.Embed(
-        title="💎 PANEL INVITES FFZ",
+    # ── Embed 1: status + mensagens ──
+    embed1 = discord.Embed(
+        title="💎 PANEL INVITES FFZ — Mensagens",
         description=(
             "Gerencie o sistema de convites do servidor.\n"
             "Use os botões abaixo para configurar tudo sem mexer em código.\n\u200b"
         ),
         color=0x5865F2
     )
-    embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
-
-    embed.add_field(
+    embed1.set_thumbnail(url=guild.icon.url if guild.icon else None)
+    embed1.add_field(
         name="📡 Canais configurados",
         value=(
             f"📥 **Entrada:** {canal_str(cfg['join_channel_id'])}\n"
@@ -475,27 +485,46 @@ def build_painel_principal(guild: discord.Guild, cfg: dict):
         ),
         inline=False,
     )
-    embed.add_field(
-        name="🎨 Personalização",
-        value=(
-            f"**Cor Entrada:** `#{cfg['join_color']}`\n"
-            f"**Cor Saída:** `#{cfg['leave_color']}`\n"
-            f"**Emojis:** {cfg['emoji_join']} {cfg['emoji_leave']} {cfg['emoji_inviter']} {cfg['emoji_stats']} {cfg['emoji_member']}"
-        ),
-        inline=True,
-    )
-    embed.add_field(
+    embed1.add_field(
         name="📝 Títulos",
         value=(
             f"**Entrada:** {cfg['join_title'][:40]}\n"
             f"**Saída:** {cfg['leave_title'][:40]}"
         ),
+        inline=False,
+    )
+    embed1.set_footer(text=f"FFZ E-SPORTS • {guild.member_count} membros")
+
+    # ── Embed 2: personalização ──
+    embed2 = discord.Embed(
+        title="🎨 Personalização",
+        color=0x5865F2
+    )
+    embed2.add_field(
+        name="Cores",
+        value=(
+            f"**Cor Entrada:** `#{cfg['join_color']}`\n"
+            f"**Cor Saída:** `#{cfg['leave_color']}`"
+        ),
         inline=True,
     )
-    embed.set_footer(text=f"FFZ E-SPORTS • {guild.member_count} membros")
+    embed2.add_field(
+        name="Emojis",
+        value=(
+            f"{cfg['emoji_join']} {cfg['emoji_leave']} "
+            f"{cfg['emoji_inviter']} {cfg['emoji_stats']} {cfg['emoji_member']}"
+        ),
+        inline=True,
+    )
+    embed2.add_field(
+        name="Rodapé",
+        value=f"`{cfg['footer_text']}`",
+        inline=False,
+    )
 
-    view = ViewPainelPrincipal(cfg)
-    return embed, view
+    view1 = ViewPainelMensagens(cfg)
+    view2 = ViewPainelPersonalizacao(cfg)
+    return embed1, embed2, view1, view2
 
 
 # ───────────────────────────────────────────────
@@ -550,8 +579,11 @@ async def setup(bot: commands.Bot):
     @app_commands.checks.has_permissions(administrator=True)
     async def painel(interaction: discord.Interaction):
         cfg = await get_config(interaction.guild_id)
-        embed, view = build_painel_principal(interaction.guild, cfg)
-        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+        embed1, embed2, view1, view2 = build_painel_principal(interaction.guild, cfg)
+        # Primeira mensagem ephemeral: Painel de Mensagens
+        await interaction.response.send_message(embed=embed1, view=view1, ephemeral=True)
+        # Segunda mensagem ephemeral: Painel de Personalização
+        await interaction.followup.send(embed=embed2, view=view2, ephemeral=True)
 
     # ── Slash command /ranking ─────────────────
     @bot.tree.command(
