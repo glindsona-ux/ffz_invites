@@ -181,8 +181,8 @@ class ModalMensagemEntrada(discord.ui.Modal, title="✏️ Mensagem de Entrada")
 
     def __init__(self, cfg: dict):
         super().__init__()
-        self.join_title.default  = cfg.get("join_title", "")
-        self.join_body.default   = cfg.get("join_body", "")
+        self.join_title.default  = cfg.get("join_title", "NOVO RECRUTA")
+        self.join_body.default   = cfg.get("join_body", "Membro: {member}")
         self.join_color.default  = cfg.get("join_color", "5865F2")
         self.join_banner.default = cfg.get("join_banner", "")
 
@@ -292,7 +292,7 @@ class ModalFooter(discord.ui.Modal, title="📝 Personalizar Rodapé"):
 
     def __init__(self, cfg: dict):
         super().__init__()
-        self.footer_text.default = cfg.get("footer_text", "FFZ E-SPORTS | {count} membros")
+        self.footer_text.default = cfg.get("footer_text", "FFZ E-SPORTS membros")
 
     async def on_submit(self, interaction: discord.Interaction):
         await set_config(interaction.guild_id, footer_text=self.footer_text.value)
