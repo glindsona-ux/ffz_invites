@@ -36,6 +36,24 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
+    # ── Registra as views persistentes ANTES de qualquer interação ──
+    # Isso garante que os botões funcionem mesmo após reinício do bot
+    from bot.convite import ViewPainelPrincipal, ViewCanais, _load_config_from_db, atualizar_cache
+
+    bot.add_view(ViewPainelPrincipal())  # custom_ids fixos = sobrevive ao reinício
+    bot.add_view(ViewCanais())           # botão "Voltar ao Painel" também persistente
+
+    # Pré-carrega cache de invites e config de todos os servidores
+    for guild in bot.guilds:
+        await atualizar_cache(guild)
+        await _load_config_from_db(guild.id)
+
+    try:
+        synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
+        print(f"[BOT] {len(synced)} slash command(s) sincronizado(s).")
+    except Exception as e:
+        print(f"[BOT] Erro ao sincronizar slash commands: {e}")
+
     print(f"[BOT] Online como {bot.user} | {len(bot.guilds)} servidor(es)")
 
 # ── Main ──────────────────────────────────────
