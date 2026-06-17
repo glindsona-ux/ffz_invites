@@ -367,26 +367,35 @@ class ViewPainelPrincipal(discord.ui.View):
         )
         await interaction.response.edit_message(embed=embed, view=view)
 
+    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="✏️ Msg Entrada", style=discord.ButtonStyle.success, row=0)
     async def msg_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(ModalMensagemEntrada(self.cfg))
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalMensagemEntrada(cfg))
 
+    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="✏️ Msg Saída", style=discord.ButtonStyle.danger, row=0)
     async def msg_saida(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(ModalMensagemSaida(self.cfg))
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalMensagemSaida(cfg))
 
+    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="😀 Emojis", style=discord.ButtonStyle.secondary, row=1)
     async def emojis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(ModalEmojis(self.cfg))
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalEmojis(cfg))
 
+    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="📝 Rodapé", style=discord.ButtonStyle.secondary, row=1)
     async def rodape(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(ModalFooter(self.cfg))
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalFooter(cfg))
 
     @discord.ui.button(label="🏆 Ver Ranking", style=discord.ButtonStyle.secondary, row=1)
     async def ranking(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer(ephemeral=True)
-        embed = await build_ranking_embed(interaction.guild, self.cfg)
+        cfg = await get_config(interaction.guild_id)
+        embed = await build_ranking_embed(interaction.guild, cfg)
         await interaction.followup.send(embed=embed, ephemeral=True)
 
     @discord.ui.button(label="👁️ Preview Entrada", style=discord.ButtonStyle.secondary, row=2)
