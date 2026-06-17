@@ -15,14 +15,29 @@ FFZ_THUMBNAIL = "https://i.imgur.com/gLKi0lg.jpeg"
 
 invites_cache = {}
 
+# ── Cache em memória da config (evita consulta ao banco nos botões) ──
+_config_cache: dict[int, dict] = {}
+
+DEFAULT_CONFIG = {
+    "join_channel_id": None, "leave_channel_id": None, "log_channel_id": None,
+    "join_title": "🔵 NOVO RECRUTA NA ÁREA",
+    "join_body": "👤 **Membro**\n{member}\n`{username}`\n\n🎯 **Recrutado por**\n{inviter}\n\n📊 **Total de convites**\n`{total}`",
+    "join_color": "5865F2", "join_banner": "",
+    "leave_title": "😔 RECRUTA ABANDONOU O POSTO",
+    "leave_body": "👤 **Membro**\n`{username}`\n\n🎯 **Foi recrutado por**\n{inviter}",
+    "leave_color": "e74c3c", "leave_banner": "",
+    "log_title": "📋 LOG DE CONVITES FFZ", "log_color": "5865F2",
+    "emoji_join": "🔵", "emoji_leave": "😔", "emoji_inviter": "🎯",
+    "emoji_stats": "📊", "emoji_member": "👤",
+    "footer_text": "FFZ E-SPORTS | {count} membros",
+}
+
 # ───────────────────────────────────────────────
 #  BANCO DE DADOS
 # ───────────────────────────────────────────────
 async def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     async with aiosqlite.connect(DB_PATH) as db:
-
-        # Rastreamento de quem convidou quem
         await db.execute("""
             CREATE TABLE IF NOT EXISTS invites_data (
                 guild_id   INTEGER,
@@ -31,8 +46,6 @@ async def init_db():
                 PRIMARY KEY (guild_id, user_id)
             )
         """)
-
-        # Configurações do painel por servidor
         await db.execute("""
             CREATE TABLE IF NOT EXISTS guild_config (
                 guild_id          INTEGER PRIMARY KEY,
@@ -57,7 +70,6 @@ async def init_db():
                 footer_text       TEXT DEFAULT 'FFZ E-SPORTS | {count} membros'
             )
         """)
-
         await db.commit()
 
 
@@ -65,6 +77,14 @@ async def init_db():
 #  HELPERS DE CONFIG
 # ───────────────────────────────────────────────
 async def get_config(guild_id: int) -> dict:
+    """Retorna config do cache em memória. Se não tiver, busca do banco."""
+    if guild_id in _config_cache:
+        return _config_cache[guild_id]
+    return await _load_config_from_db(guild_id)
+
+
+async def _load_config_from_db(guild_id: int) -> dict:
+    """Busca config do banco e salva no cache em memória."""
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
@@ -72,27 +92,16 @@ async def get_config(guild_id: int) -> dict:
         )
         row = await cursor.fetchone()
     if row:
-        return dict(row)
-    # retorna defaults se não configurado ainda
-    return {
-        "guild_id": guild_id,
-        "join_channel_id": None, "leave_channel_id": None, "log_channel_id": None,
-        "join_title": "🔵 NOVO RECRUTA NA ÁREA",
-        "join_body": "👤 **Membro**\n{member}\n`{username}`\n\n🎯 **Recrutado por**\n{inviter}\n\n📊 **Total de convites**\n`{total}`",
-        "join_color": "5865F2", "join_banner": "",
-        "leave_title": "😔 RECRUTA ABANDONOU O POSTO",
-        "leave_body": "👤 **Membro**\n`{username}`\n\n🎯 **Foi recrutado por**\n{inviter}",
-        "leave_color": "e74c3c", "leave_banner": "",
-        "log_title": "📋 LOG DE CONVITES FFZ", "log_color": "5865F2",
-        "emoji_join": "🔵", "emoji_leave": "😔", "emoji_inviter": "🎯",
-        "emoji_stats": "📊", "emoji_member": "👤",
-        "footer_text": "FFZ E-SPORTS | {count} membros",
-    }
+        cfg = dict(row)
+    else:
+        cfg = {"guild_id": guild_id, **DEFAULT_CONFIG}
+    _config_cache[guild_id] = cfg
+    return cfg
 
 
 async def set_config(guild_id: int, **kwargs):
+    """Salva config no banco e atualiza o cache em memória."""
     async with aiosqlite.connect(DB_PATH) as db:
-        # Garante que a linha existe
         await db.execute(
             "INSERT OR IGNORE INTO guild_config (guild_id) VALUES (?)", (guild_id,)
         )
@@ -101,6 +110,11 @@ async def set_config(guild_id: int, **kwargs):
                 f"UPDATE guild_config SET {key} = ? WHERE guild_id = ?", (value, guild_id)
             )
         await db.commit()
+    # Atualiza cache em memória imediatamente
+    if guild_id in _config_cache:
+        _config_cache[guild_id].update(kwargs)
+    else:
+        await _load_config_from_db(guild_id)
 
 
 def hex_to_int(hex_str: str) -> int:
@@ -167,9 +181,9 @@ class ModalMensagemEntrada(discord.ui.Modal, title="✏️ Mensagem de Entrada")
 
     def __init__(self, cfg: dict):
         super().__init__()
-        self.join_title.default = cfg.get("join_title", "")
-        self.join_body.default  = cfg.get("join_body", "")
-        self.join_color.default = cfg.get("join_color", "5865F2")
+        self.join_title.default  = cfg.get("join_title", "")
+        self.join_body.default   = cfg.get("join_body", "")
+        self.join_color.default  = cfg.get("join_color", "5865F2")
         self.join_banner.default = cfg.get("join_banner", "")
 
     async def on_submit(self, interaction: discord.Interaction):
@@ -367,27 +381,25 @@ class ViewPainelPrincipal(discord.ui.View):
         )
         await interaction.response.edit_message(embed=embed, view=view)
 
-    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="✏️ Msg Entrada", style=discord.ButtonStyle.success, row=0)
     async def msg_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Usa cache em memória — resposta instantânea, sem I/O de banco
         cfg = await get_config(interaction.guild_id)
         await interaction.response.send_modal(ModalMensagemEntrada(cfg))
 
-    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="✏️ Msg Saída", style=discord.ButtonStyle.danger, row=0)
     async def msg_saida(self, interaction: discord.Interaction, button: discord.ui.Button):
         cfg = await get_config(interaction.guild_id)
         await interaction.response.send_modal(ModalMensagemSaida(cfg))
 
-    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="😀 Emojis", style=discord.ButtonStyle.secondary, row=1)
     async def emojis(self, interaction: discord.Interaction, button: discord.ui.Button):
         cfg = await get_config(interaction.guild_id)
         await interaction.response.send_modal(ModalEmojis(cfg))
 
-    # ── CORRIGIDO: busca cfg atualizado do banco antes de abrir o modal ──
     @discord.ui.button(label="📝 Rodapé", style=discord.ButtonStyle.secondary, row=1)
     async def rodape(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Usa cache em memória — resposta instantânea, sem I/O de banco
         cfg = await get_config(interaction.guild_id)
         await interaction.response.send_modal(ModalFooter(cfg))
 
@@ -559,7 +571,8 @@ async def setup(bot: commands.Bot):
     async def on_ready():
         for guild in bot.guilds:
             await atualizar_cache(guild)
-        # Sincroniza slash commands
+            # Pré-carrega config de todos os servidores no cache em memória
+            await _load_config_from_db(guild.id)
         try:
             synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
             print(f"[CONVITE] {len(synced)} slash command(s) sincronizado(s).")
