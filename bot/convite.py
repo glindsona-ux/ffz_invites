@@ -181,6 +181,10 @@ class ModalMensagemEntrada(discord.ui.Modal, title="✏️ Mensagem de Entrada")
 
     def __init__(self, cfg: dict):
         super().__init__()
+        self.join_title.default  = cfg.get("join_title", "")
+        self.join_body.default   = cfg.get("join_body", "")
+        self.join_color.default  = cfg.get("join_color", "5865F2")
+        self.join_banner.default = cfg.get("join_banner", "")
 
     async def on_submit(self, interaction: discord.Interaction):
         await set_config(
@@ -288,6 +292,7 @@ class ModalFooter(discord.ui.Modal, title="📝 Personalizar Rodapé"):
 
     def __init__(self, cfg: dict):
         super().__init__()
+        self.footer_text.default = cfg.get("footer_text", "FFZ E-SPORTS | {count} membros")
 
     async def on_submit(self, interaction: discord.Interaction):
         await set_config(interaction.guild_id, footer_text=self.footer_text.value)
@@ -366,6 +371,11 @@ class ViewPainelPrincipal(discord.ui.View):
         super().__init__(timeout=300)
         self.cfg = cfg
 
+    @discord.ui.button(label="✏️ Msg Entrada", style=discord.ButtonStyle.success, row=0)
+    async def msg_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalMensagemEntrada(cfg))
+
     @discord.ui.button(label="📥 Canal Entrada", style=discord.ButtonStyle.primary, row=0)
     async def canal_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
         view = ViewCanais()
@@ -376,27 +386,20 @@ class ViewPainelPrincipal(discord.ui.View):
         )
         await interaction.response.edit_message(embed=embed, view=view)
 
-    @discord.ui.button(label="✏️ Msg Entrada", style=discord.ButtonStyle.success, row=0)
-    async def msg_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Usa cache em memória — resposta instantânea, sem I/O de banco
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalMensagemEntrada(cfg))
-
     @discord.ui.button(label="✏️ Msg Saída", style=discord.ButtonStyle.danger, row=0)
     async def msg_saida(self, interaction: discord.Interaction, button: discord.ui.Button):
         cfg = await get_config(interaction.guild_id)
         await interaction.response.send_modal(ModalMensagemSaida(cfg))
 
+    @discord.ui.button(label="📝 Rodapé", style=discord.ButtonStyle.secondary, row=1)
+    async def rodape(self, interaction: discord.Interaction, button: discord.ui.Button):
+        cfg = await get_config(interaction.guild_id)
+        await interaction.response.send_modal(ModalFooter(cfg))
+
     @discord.ui.button(label="😀 Emojis", style=discord.ButtonStyle.secondary, row=1)
     async def emojis(self, interaction: discord.Interaction, button: discord.ui.Button):
         cfg = await get_config(interaction.guild_id)
         await interaction.response.send_modal(ModalEmojis(cfg))
-
-    @discord.ui.button(label="📝 Rodapé", style=discord.ButtonStyle.secondary, row=1)
-    async def rodape(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Usa cache em memória — resposta instantânea, sem I/O de banco
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalFooter(cfg))
 
     @discord.ui.button(label="🏆 Ver Ranking", style=discord.ButtonStyle.secondary, row=1)
     async def ranking(self, interaction: discord.Interaction, button: discord.ui.Button):
