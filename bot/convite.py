@@ -131,20 +131,41 @@ async def atualizar_cache(guild: discord.Guild):
 
 
 # ───────────────────────────────────────────────
-#  MODALS
+#  MODALS — CORRIGIDOS (TextInput criado no __init__)
 # ───────────────────────────────────────────────
 class ModalMensagemEntrada(discord.ui.Modal, title="✏️ Mensagem de Entrada"):
-    join_title  = discord.ui.TextInput(label="Título da embed", placeholder="Ex: 🔵 NOVO RECRUTA NA ÁREA", max_length=100)
-    join_body   = discord.ui.TextInput(label="Conteúdo (use {member} {username} {inviter} {total})", style=discord.TextStyle.paragraph, max_length=1000)
-    join_color  = discord.ui.TextInput(label="Cor da embed (hex sem #)", placeholder="5865F2", max_length=6, required=False)
-    join_banner = discord.ui.TextInput(label="URL do banner (opcional)", placeholder="https://i.imgur.com/...", required=False, max_length=300)
-
     def __init__(self, cfg):
         super().__init__()
-        self.join_title.default  = cfg.get("join_title", "")
-        self.join_body.default   = cfg.get("join_body", "")
-        self.join_color.default  = cfg.get("join_color", "5865F2")
-        self.join_banner.default = cfg.get("join_banner", "")
+        self.join_title = discord.ui.TextInput(
+            label="Título da embed",
+            placeholder="Ex: 🔵 NOVO RECRUTA NA ÁREA",
+            max_length=100,
+            default=cfg.get("join_title", ""),
+        )
+        self.join_body = discord.ui.TextInput(
+            label="Conteúdo (use {member} {username} {inviter} {total})",
+            style=discord.TextStyle.paragraph,
+            max_length=1000,
+            default=cfg.get("join_body", ""),
+        )
+        self.join_color = discord.ui.TextInput(
+            label="Cor da embed (hex sem #)",
+            placeholder="5865F2",
+            max_length=6,
+            required=False,
+            default=cfg.get("join_color", "5865F2"),
+        )
+        self.join_banner = discord.ui.TextInput(
+            label="URL do banner (opcional)",
+            placeholder="https://i.imgur.com/...",
+            required=False,
+            max_length=300,
+            default=cfg.get("join_banner", ""),
+        )
+        self.add_item(self.join_title)
+        self.add_item(self.join_body)
+        self.add_item(self.join_color)
+        self.add_item(self.join_banner)
 
     async def on_submit(self, interaction: discord.Interaction):
         await set_config(interaction.guild_id,
@@ -154,17 +175,38 @@ class ModalMensagemEntrada(discord.ui.Modal, title="✏️ Mensagem de Entrada")
 
 
 class ModalMensagemSaida(discord.ui.Modal, title="✏️ Mensagem de Saída"):
-    leave_title  = discord.ui.TextInput(label="Título da embed", placeholder="Ex: 😔 RECRUTA ABANDONOU O POSTO", max_length=100)
-    leave_body   = discord.ui.TextInput(label="Conteúdo (use {username} {inviter})", style=discord.TextStyle.paragraph, max_length=1000)
-    leave_color  = discord.ui.TextInput(label="Cor da embed (hex sem #)", placeholder="e74c3c", max_length=6, required=False)
-    leave_banner = discord.ui.TextInput(label="URL do banner (opcional)", placeholder="https://i.imgur.com/...", required=False, max_length=300)
-
     def __init__(self, cfg):
         super().__init__()
-        self.leave_title.default  = cfg.get("leave_title", "")
-        self.leave_body.default   = cfg.get("leave_body", "")
-        self.leave_color.default  = cfg.get("leave_color", "e74c3c")
-        self.leave_banner.default = cfg.get("leave_banner", "")
+        self.leave_title = discord.ui.TextInput(
+            label="Título da embed",
+            placeholder="Ex: 😔 RECRUTA ABANDONOU O POSTO",
+            max_length=100,
+            default=cfg.get("leave_title", ""),
+        )
+        self.leave_body = discord.ui.TextInput(
+            label="Conteúdo (use {username} {inviter})",
+            style=discord.TextStyle.paragraph,
+            max_length=1000,
+            default=cfg.get("leave_body", ""),
+        )
+        self.leave_color = discord.ui.TextInput(
+            label="Cor da embed (hex sem #)",
+            placeholder="e74c3c",
+            max_length=6,
+            required=False,
+            default=cfg.get("leave_color", "e74c3c"),
+        )
+        self.leave_banner = discord.ui.TextInput(
+            label="URL do banner (opcional)",
+            placeholder="https://i.imgur.com/...",
+            required=False,
+            max_length=300,
+            default=cfg.get("leave_banner", ""),
+        )
+        self.add_item(self.leave_title)
+        self.add_item(self.leave_body)
+        self.add_item(self.leave_color)
+        self.add_item(self.leave_banner)
 
     async def on_submit(self, interaction: discord.Interaction):
         await set_config(interaction.guild_id,
@@ -174,19 +216,43 @@ class ModalMensagemSaida(discord.ui.Modal, title="✏️ Mensagem de Saída"):
 
 
 class ModalEmojis(discord.ui.Modal, title="😀 Personalizar Emojis"):
-    emoji_join    = discord.ui.TextInput(label="Emoji de Entrada",      placeholder="🔵 ou <:nome:ID>", max_length=50)
-    emoji_leave   = discord.ui.TextInput(label="Emoji de Saída",        placeholder="😔 ou <:nome:ID>", max_length=50)
-    emoji_inviter = discord.ui.TextInput(label="Emoji de Recrutador",   placeholder="🎯 ou <:nome:ID>", max_length=50)
-    emoji_stats   = discord.ui.TextInput(label="Emoji de Estatísticas", placeholder="📊 ou <:nome:ID>", max_length=50)
-    emoji_member  = discord.ui.TextInput(label="Emoji de Membro",       placeholder="👤 ou <:nome:ID>", max_length=50)
-
     def __init__(self, cfg):
         super().__init__()
-        self.emoji_join.default    = cfg.get("emoji_join", "🔵")
-        self.emoji_leave.default   = cfg.get("emoji_leave", "😔")
-        self.emoji_inviter.default = cfg.get("emoji_inviter", "🎯")
-        self.emoji_stats.default   = cfg.get("emoji_stats", "📊")
-        self.emoji_member.default  = cfg.get("emoji_member", "👤")
+        self.emoji_join = discord.ui.TextInput(
+            label="Emoji de Entrada",
+            placeholder="🔵 ou <:nome:ID>",
+            max_length=50,
+            default=cfg.get("emoji_join", "🔵"),
+        )
+        self.emoji_leave = discord.ui.TextInput(
+            label="Emoji de Saída",
+            placeholder="😔 ou <:nome:ID>",
+            max_length=50,
+            default=cfg.get("emoji_leave", "😔"),
+        )
+        self.emoji_inviter = discord.ui.TextInput(
+            label="Emoji de Recrutador",
+            placeholder="🎯 ou <:nome:ID>",
+            max_length=50,
+            default=cfg.get("emoji_inviter", "🎯"),
+        )
+        self.emoji_stats = discord.ui.TextInput(
+            label="Emoji de Estatísticas",
+            placeholder="📊 ou <:nome:ID>",
+            max_length=50,
+            default=cfg.get("emoji_stats", "📊"),
+        )
+        self.emoji_member = discord.ui.TextInput(
+            label="Emoji de Membro",
+            placeholder="👤 ou <:nome:ID>",
+            max_length=50,
+            default=cfg.get("emoji_member", "👤"),
+        )
+        self.add_item(self.emoji_join)
+        self.add_item(self.emoji_leave)
+        self.add_item(self.emoji_inviter)
+        self.add_item(self.emoji_stats)
+        self.add_item(self.emoji_member)
 
     async def on_submit(self, interaction: discord.Interaction):
         await set_config(interaction.guild_id,
@@ -197,11 +263,15 @@ class ModalEmojis(discord.ui.Modal, title="😀 Personalizar Emojis"):
 
 
 class ModalFooter(discord.ui.Modal, title="📝 Personalizar Rodapé"):
-    footer_text = discord.ui.TextInput(label="Texto do rodapé (use {count} para nº de membros)", placeholder="FFZ E-SPORTS | {count} membros", max_length=100)
-
     def __init__(self, cfg):
         super().__init__()
-        self.footer_text.default = cfg.get("footer_text", "FFZ E-SPORTS | {count} membros")
+        self.footer_text = discord.ui.TextInput(
+            label="Texto do rodapé (use {count} para nº de membros)",
+            placeholder="FFZ E-SPORTS | {count} membros",
+            max_length=100,
+            default=cfg.get("footer_text", "FFZ E-SPORTS | {count} membros"),
+        )
+        self.add_item(self.footer_text)
 
     async def on_submit(self, interaction: discord.Interaction):
         await set_config(interaction.guild_id, footer_text=self.footer_text.value)
@@ -259,7 +329,7 @@ class ViewCanais(discord.ui.View):
 # ───────────────────────────────────────────────
 class ViewPainelPrincipal(discord.ui.View):
     def __init__(self, cfg: dict = {}):
-        super().__init__(timeout=None)  # timeout=None obrigatório pra views persistentes
+        super().__init__(timeout=None)
         self.cfg = cfg
 
     # ── Row 0: Mensagens ──
@@ -411,6 +481,10 @@ async def build_ranking_embed(guild: discord.Guild, cfg: dict) -> discord.Embed:
 # ───────────────────────────────────────────────
 async def setup(bot: commands.Bot):
     await init_db()
+
+    # Registra as views persistentes para funcionar após restart
+    bot.add_view(ViewPainelPrincipal())
+    bot.add_view(ViewCanais())
 
     @bot.tree.command(
         name="painel",
