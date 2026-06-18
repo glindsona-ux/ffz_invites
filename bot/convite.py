@@ -283,7 +283,7 @@ class ModalFooter(discord.ui.Modal, title="📝 Personalizar Rodapé"):
 # ───────────────────────────────────────────────
 class SelectCanalEntrada(discord.ui.ChannelSelect):
     def __init__(self):
-        super().__init__(placeholder="📥 Selecione o canal de ENTRADA", channel_types=[discord.ChannelType.text])
+        super().__init__(placeholder="📥 Selecione o canal de ENTRADA", channel_types=[discord.ChannelType.text], custom_id="ffz:select_entrada")
     async def callback(self, interaction: discord.Interaction):
         canal = self.values[0]
         await set_config(interaction.guild_id, join_channel_id=canal.id)
@@ -291,7 +291,7 @@ class SelectCanalEntrada(discord.ui.ChannelSelect):
 
 class SelectCanalSaida(discord.ui.ChannelSelect):
     def __init__(self):
-        super().__init__(placeholder="📤 Selecione o canal de SAÍDA", channel_types=[discord.ChannelType.text])
+        super().__init__(placeholder="📤 Selecione o canal de SAÍDA", channel_types=[discord.ChannelType.text], custom_id="ffz:select_saida")
     async def callback(self, interaction: discord.Interaction):
         canal = self.values[0]
         await set_config(interaction.guild_id, leave_channel_id=canal.id)
@@ -299,7 +299,7 @@ class SelectCanalSaida(discord.ui.ChannelSelect):
 
 class SelectCanalLogs(discord.ui.ChannelSelect):
     def __init__(self):
-        super().__init__(placeholder="📋 Selecione o canal de LOGS", channel_types=[discord.ChannelType.text])
+        super().__init__(placeholder="📋 Selecione o canal de LOGS", channel_types=[discord.ChannelType.text], custom_id="ffz:select_logs")
     async def callback(self, interaction: discord.Interaction):
         canal = self.values[0]
         await set_config(interaction.guild_id, log_channel_id=canal.id)
