@@ -143,7 +143,7 @@ class ModalMensagemEntrada(discord.ui.Modal, title="✏️ Mensagem de Entrada")
             default=cfg.get("join_title", ""),
         )
         self.join_body = discord.ui.TextInput(
-            label="Conteúdo ({member} {username} {inviter} {total})",
+            label="Corpo ({member} {username} {inviter} {total})",
             style=discord.TextStyle.paragraph,
             max_length=1000,
             default=cfg.get("join_body", ""),
