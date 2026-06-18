@@ -336,74 +336,135 @@ class ViewPainelPrincipal(discord.ui.View):
     @discord.ui.button(label="✏️ Msg Entrada", style=discord.ButtonStyle.success,
                        custom_id="ffz:msg_entrada", row=0)
     async def msg_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalMensagemEntrada(cfg))
+        try:
+            cfg = await get_config(interaction.guild_id)
+            await interaction.response.send_modal(ModalMensagemEntrada(cfg))
+        except Exception as e:
+            print(f"[ERRO] msg_entrada: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            try:
+                await interaction.response.send_message(f"❌ Erro interno: `{e}`", ephemeral=True)
+            except Exception:
+                await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
     @discord.ui.button(label="📥 Canal Entrada", style=discord.ButtonStyle.primary,
                        custom_id="ffz:canal_entrada", row=0)
     async def canal_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(
-            title="📥 Configurar Canais",
-            description="Selecione abaixo cada canal para entrada, saída e logs de convites.",
-            color=0x5865F2
-        )
-        await interaction.response.edit_message(embeds=[embed], view=ViewCanais())
+        try:
+            embed = discord.Embed(
+                title="📥 Configurar Canais",
+                description="Selecione abaixo cada canal para entrada, saída e logs de convites.",
+                color=0x5865F2
+            )
+            await interaction.response.edit_message(embeds=[embed], view=ViewCanais())
+        except Exception as e:
+            print(f"[ERRO] canal_entrada: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            try:
+                await interaction.response.send_message(f"❌ Erro interno: `{e}`", ephemeral=True)
+            except Exception:
+                await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
     @discord.ui.button(label="✏️ Msg Saída", style=discord.ButtonStyle.danger,
                        custom_id="ffz:msg_saida", row=0)
     async def msg_saida(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalMensagemSaida(cfg))
+        try:
+            cfg = await get_config(interaction.guild_id)
+            await interaction.response.send_modal(ModalMensagemSaida(cfg))
+        except Exception as e:
+            print(f"[ERRO] msg_saida: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            try:
+                await interaction.response.send_message(f"❌ Erro interno: `{e}`", ephemeral=True)
+            except Exception:
+                await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
     # ── Row 1: Personalização ──
     @discord.ui.button(label="📝 Rodapé", style=discord.ButtonStyle.secondary,
                        custom_id="ffz:rodape", row=1)
     async def rodape(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalFooter(cfg))
+        try:
+            cfg = await get_config(interaction.guild_id)
+            await interaction.response.send_modal(ModalFooter(cfg))
+        except Exception as e:
+            print(f"[ERRO] rodape: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            try:
+                await interaction.response.send_message(f"❌ Erro interno: `{e}`", ephemeral=True)
+            except Exception:
+                await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
     @discord.ui.button(label="😀 Emojis", style=discord.ButtonStyle.secondary,
                        custom_id="ffz:emojis", row=1)
     async def emojis(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        await interaction.response.send_modal(ModalEmojis(cfg))
+        try:
+            cfg = await get_config(interaction.guild_id)
+            await interaction.response.send_modal(ModalEmojis(cfg))
+        except Exception as e:
+            print(f"[ERRO] emojis: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            try:
+                await interaction.response.send_message(f"❌ Erro interno: `{e}`", ephemeral=True)
+            except Exception:
+                await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
     @discord.ui.button(label="🏆 Ver Ranking", style=discord.ButtonStyle.secondary,
                        custom_id="ffz:ranking", row=1)
     async def ranking(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.defer(ephemeral=True)
-        cfg = await get_config(interaction.guild_id)
-        embed = await build_ranking_embed(interaction.guild, cfg)
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            cfg = await get_config(interaction.guild_id)
+            embed = await build_ranking_embed(interaction.guild, cfg)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+        except Exception as e:
+            print(f"[ERRO] ranking: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
     # ── Row 2: Preview ──
     @discord.ui.button(label="👁️ Preview Entrada", style=discord.ButtonStyle.secondary,
                        custom_id="ffz:preview_entrada", row=2)
     async def preview_entrada(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        body = (cfg["join_body"]
-            .replace("{member}", interaction.user.mention)
-            .replace("{username}", interaction.user.name)
-            .replace("{inviter}", "**@Recrutador**")
-            .replace("{total}", "5"))
-        embed = build_embed(cfg["join_title"], body, cfg["join_color"],
-            cfg["join_banner"] or FFZ_THUMBNAIL,
-            build_footer(cfg, interaction.guild),
-            interaction.user.display_avatar.url)
-        await interaction.response.send_message(content="👁️ **Preview de entrada:**", embed=embed, ephemeral=True)
+        try:
+            cfg = await get_config(interaction.guild_id)
+            body = (cfg["join_body"]
+                .replace("{member}", interaction.user.mention)
+                .replace("{username}", interaction.user.name)
+                .replace("{inviter}", "**@Recrutador**")
+                .replace("{total}", "5"))
+            embed = build_embed(cfg["join_title"], body, cfg["join_color"],
+                cfg["join_banner"] or FFZ_THUMBNAIL,
+                build_footer(cfg, interaction.guild),
+                interaction.user.display_avatar.url)
+            await interaction.response.send_message(content="👁️ **Preview de entrada:**", embed=embed, ephemeral=True)
+        except Exception as e:
+            print(f"[ERRO] preview_entrada: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            try:
+                await interaction.response.send_message(f"❌ Erro interno: `{e}`", ephemeral=True)
+            except Exception:
+                await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
     @discord.ui.button(label="👁️ Preview Saída", style=discord.ButtonStyle.secondary,
                        custom_id="ffz:preview_saida", row=2)
     async def preview_saida(self, interaction: discord.Interaction, button: discord.ui.Button):
-        cfg = await get_config(interaction.guild_id)
-        body = (cfg["leave_body"]
-            .replace("{username}", interaction.user.name)
-            .replace("{inviter}", "**@Recrutador**"))
-        embed = build_embed(cfg["leave_title"], body, cfg["leave_color"],
-            cfg["leave_banner"] or FFZ_THUMBNAIL,
-            build_footer(cfg, interaction.guild),
-            interaction.user.display_avatar.url)
-        await interaction.response.send_message(content="👁️ **Preview de saída:**", embed=embed, ephemeral=True)
+        try:
+            cfg = await get_config(interaction.guild_id)
+            body = (cfg["leave_body"]
+                .replace("{username}", interaction.user.name)
+                .replace("{inviter}", "**@Recrutador**"))
+            embed = build_embed(cfg["leave_title"], body, cfg["leave_color"],
+                cfg["leave_banner"] or FFZ_THUMBNAIL,
+                build_footer(cfg, interaction.guild),
+                interaction.user.display_avatar.url)
+            await interaction.response.send_message(content="👁️ **Preview de saída:**", embed=embed, ephemeral=True)
+        except Exception as e:
+            print(f"[ERRO] preview_saida: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            try:
+                await interaction.response.send_message(f"❌ Erro interno: `{e}`", ephemeral=True)
+            except Exception:
+                await interaction.followup.send(f"❌ Erro interno: `{e}`", ephemeral=True)
 
 
 # ───────────────────────────────────────────────
