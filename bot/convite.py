@@ -143,7 +143,7 @@ class ModalMensagemEntrada(discord.ui.Modal, title="✏️ Mensagem de Entrada")
             default=cfg.get("join_title", ""),
         )
         self.join_body = discord.ui.TextInput(
-            label="Conteúdo (use {member} {username} {inviter} {total})",
+            label="Conteúdo ({member} {username} {inviter} {total})",
             style=discord.TextStyle.paragraph,
             max_length=1000,
             default=cfg.get("join_body", ""),
@@ -184,7 +184,7 @@ class ModalMensagemSaida(discord.ui.Modal, title="✏️ Mensagem de Saída"):
             default=cfg.get("leave_title", ""),
         )
         self.leave_body = discord.ui.TextInput(
-            label="Conteúdo (use {username} {inviter})",
+            label="Conteúdo ({username} {inviter})",
             style=discord.TextStyle.paragraph,
             max_length=1000,
             default=cfg.get("leave_body", ""),
@@ -266,7 +266,7 @@ class ModalFooter(discord.ui.Modal, title="📝 Personalizar Rodapé"):
     def __init__(self, cfg):
         super().__init__()
         self.footer_text = discord.ui.TextInput(
-            label="Texto do rodapé (use {count} para nº de membros)",
+            label="Rodapé (use {count} para nº de membros)",
             placeholder="FFZ E-SPORTS | {count} membros",
             max_length=100,
             default=cfg.get("footer_text", "FFZ E-SPORTS | {count} membros"),
