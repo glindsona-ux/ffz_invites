@@ -25,7 +25,7 @@ def keep_alive():
     t.daemon = True
     t.start()
 
-# ── Intents ───────────────────────────────────
+# ── Intents ──────────────────────────────────
 intents = discord.Intents.default()
 intents.members         = True
 intents.guilds          = True
@@ -36,14 +36,10 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    # ── Registra as views persistentes ANTES de qualquer interação ──
-    # Isso garante que os botões funcionem mesmo após reinício do bot
-    from bot.convite import ViewPainelPrincipal, ViewCanais, _load_config_from_db, atualizar_cache
+    # O setup() do convite.py já registra todas as views e inicia a task.
+    # Aqui só fazemos o sync dos slash commands e o cache inicial.
+    from bot.convite import atualizar_cache, _load_config_from_db
 
-    bot.add_view(ViewPainelPrincipal())  # custom_ids fixos = sobrevive ao reinício
-    bot.add_view(ViewCanais())           # botão "Voltar ao Painel" também persistente
-
-    # Pré-carrega cache de invites e config de todos os servidores
     for guild in bot.guilds:
         await atualizar_cache(guild)
         await _load_config_from_db(guild.id)
@@ -56,7 +52,7 @@ async def on_ready():
 
     print(f"[BOT] Online como {bot.user} | {len(bot.guilds)} servidor(es)")
 
-# ── Main ──────────────────────────────────────
+# ── Main ─────────────────────────────────────
 async def main():
     async with bot:
         await bot.load_extension("bot.convite")
