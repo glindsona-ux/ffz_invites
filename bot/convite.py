@@ -724,7 +724,7 @@ class ModalCriarSorteio(discord.ui.Modal, title="🎉 Criar Sorteio"):
         self.descricao     = discord.ui.TextInput(label="Descrição (opcional)",      style=discord.TextStyle.paragraph,
             placeholder="Detalhes do sorteio...", required=False, max_length=800)
         self.vencedores    = discord.ui.TextInput(label="Número de vencedores",      placeholder="1",                          max_length=2, default="1")
-        self.personalizacao= discord.ui.TextInput(label="Emoji | Cor hex | URL Banner (separados por |)",
+        self.personalizacao= discord.ui.TextInput(label="Emoji | Cor | Banner (opcional)",
             placeholder="🎉 | FF5733 | https://i.imgur.com/...", required=False, max_length=400)
         self.add_item(self.titulo); self.add_item(self.premio); self.add_item(self.descricao)
         self.add_item(self.vencedores); self.add_item(self.personalizacao)
@@ -847,7 +847,7 @@ class ModalCriarEvento(discord.ui.Modal, title="📅 Criar Evento"):
             placeholder="Detalhes, regras, informações...", max_length=800)
         self.data           = discord.ui.TextInput(label="Data e Hora",          placeholder="Ex: 25/12/2025 às 20:00", max_length=50, required=False)
         self.local          = discord.ui.TextInput(label="Local / Plataforma",   placeholder="Ex: Discord, Servidor FFZ, Online", max_length=100, required=False)
-        self.personalizacao = discord.ui.TextInput(label="Emoji | Cor hex | URL Banner (separados por |)",
+        self.personalizacao = discord.ui.TextInput(label="Emoji | Cor | Banner (opcional)",
             placeholder="📅 | 5865F2 | https://i.imgur.com/...", required=False, max_length=400)
         self.add_item(self.titulo); self.add_item(self.descricao); self.add_item(self.data)
         self.add_item(self.local); self.add_item(self.personalizacao)
