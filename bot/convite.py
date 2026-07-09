@@ -32,6 +32,7 @@ DEFAULT_CONFIG = {
     "emoji_join": "🔵", "emoji_leave": "😔", "emoji_inviter": "🎯",
     "emoji_stats": "📊", "emoji_member": "👤",
     "footer_text": "FFZ E-SPORTS | {count} membros",
+    "msgs_formato_embed": 1,
     # Anti-Raid / Moderação
     "antilink_enabled": 0,
     "antilink_msg": "🚫 {member}, links não são permitidos aqui!",
@@ -111,11 +112,18 @@ async def init_db():
                 antiraid_log_channel_id INTEGER,
                 mod_log_channel_id      INTEGER,
                 antifake_enabled        INTEGER DEFAULT 0,
-                antifake_horas          INTEGER DEFAULT 24
+                antifake_horas          INTEGER DEFAULT 24,
+                msgs_formato_embed      INTEGER DEFAULT 1
             )
         """)
         # Migração: colunas anti-fake
         for col, defval in [("antifake_enabled", "0"), ("antifake_horas", "24")]:
+            try:
+                await db.execute(f"ALTER TABLE guild_config ADD COLUMN {col} INTEGER DEFAULT {defval}")
+            except Exception:
+                pass
+        # Migração: formato de mensagem (embed x texto normal)
+        for col, defval in [("msgs_formato_embed", "1")]:
             try:
                 await db.execute(f"ALTER TABLE guild_config ADD COLUMN {col} INTEGER DEFAULT {defval}")
             except Exception:
@@ -238,6 +246,14 @@ def build_embed(title, body, color_hex, banner, footer, thumbnail_url=None):
         embed.set_image(url=banner)
     embed.set_footer(text=footer)
     return embed
+
+def build_plain_text(title, body, footer, banner=None):
+    """Monta a mesma mensagem em formato de texto normal (sem embed)."""
+    partes = [f"**{title}**", "", body]
+    if banner:
+        partes.append(f"\n{banner}")
+    partes.append(f"\n-# {footer}")
+    return "\n".join(partes)
 
 def agora_utc() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -1307,10 +1323,14 @@ class ViewPainelPrincipal(discord.ui.View):
             .replace("{username}", interaction.user.name)
             .replace("{inviter}", "**@Recrutador**")
             .replace("{total}", "5"))
-        embed = build_embed(cfg["join_title"], body, cfg["join_color"],
-            cfg["join_banner"], build_footer(cfg, interaction.guild),
-            interaction.user.display_avatar.url)
-        await interaction.response.send_message(content="👁️ **Preview de entrada:**", embed=embed, ephemeral=True)
+        if cfg.get("msgs_formato_embed", 1):
+            embed = build_embed(cfg["join_title"], body, cfg["join_color"],
+                cfg["join_banner"], build_footer(cfg, interaction.guild),
+                interaction.user.display_avatar.url)
+            await interaction.response.send_message(content="👁️ **Preview de entrada:**", embed=embed, ephemeral=True)
+        else:
+            texto = build_plain_text(cfg["join_title"], body, build_footer(cfg, interaction.guild), cfg["join_banner"])
+            await interaction.response.send_message(content=f"👁️ **Preview de entrada:**\n\n{texto}", ephemeral=True)
 
     @discord.ui.button(label="👁️ Preview Saída", style=discord.ButtonStyle.secondary, custom_id="ffz:preview_saida", row=2)
     async def preview_saida(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -1318,10 +1338,23 @@ class ViewPainelPrincipal(discord.ui.View):
         body = (cfg["leave_body"]
             .replace("{username}", interaction.user.name)
             .replace("{inviter}", "**@Recrutador**"))
-        embed = build_embed(cfg["leave_title"], body, cfg["leave_color"],
-            cfg["leave_banner"], build_footer(cfg, interaction.guild),
-            interaction.user.display_avatar.url)
-        await interaction.response.send_message(content="👁️ **Preview de saída:**", embed=embed, ephemeral=True)
+        if cfg.get("msgs_formato_embed", 1):
+            embed = build_embed(cfg["leave_title"], body, cfg["leave_color"],
+                cfg["leave_banner"], build_footer(cfg, interaction.guild),
+                interaction.user.display_avatar.url)
+            await interaction.response.send_message(content="👁️ **Preview de saída:**", embed=embed, ephemeral=True)
+        else:
+            texto = build_plain_text(cfg["leave_title"], body, build_footer(cfg, interaction.guild), cfg["leave_banner"])
+            await interaction.response.send_message(content=f"👁️ **Preview de saída:**\n\n{texto}", ephemeral=True)
+
+    @discord.ui.button(label="🔄 Formato: Embed/Texto", style=discord.ButtonStyle.secondary, custom_id="ffz:toggle_formato", row=2)
+    async def toggle_formato(self, interaction: discord.Interaction, button: discord.ui.Button):
+        cfg  = await get_config(interaction.guild_id)
+        novo = 0 if cfg.get("msgs_formato_embed", 1) else 1
+        await set_config(interaction.guild_id, msgs_formato_embed=novo)
+        status = "🖼️ **EMBED**" if novo else "📝 **TEXTO NORMAL**"
+        await interaction.response.send_message(
+            f"🔄 Formato das mensagens de entrada/saída alterado para {status}.", ephemeral=True)
 
     # ── Row 3: Sistemas ──
     @discord.ui.button(label="🛡️ Moderação", style=discord.ButtonStyle.danger,    custom_id="ffz:painel_mod",      row=3)
@@ -1436,7 +1469,8 @@ def build_painel_principal(guild: discord.Guild, cfg: dict):
         inline=True)
     embed1.add_field(name="📝 Títulos",
         value=(f"**Entrada:** {cfg['join_title'][:40]}\n"
-               f"**Saída:** {cfg['leave_title'][:40]}"),
+               f"**Saída:** {cfg['leave_title'][:40]}\n"
+               f"**Formato:** {'🖼️ Embed' if cfg.get('msgs_formato_embed', 1) else '📝 Texto normal'}"),
         inline=True)
 
     embed2 = discord.Embed(color=0x5865F2)
@@ -1682,18 +1716,21 @@ async def setup(bot: commands.Bot):
                 if canal:
                     inviter_obj     = member.guild.get_member(inviter_id) if inviter_id else None
                     inviter_mention = inviter_obj.mention if inviter_obj else "`Link direto / Não identificado`"
-                    # Mostra qual invite foi usado para facilitar rastreio
-                    invite_info = f" `({invite_code})`" if invite_code else ""
                     body = (cfg["join_body"]
                         .replace("{member}", member.mention)
                         .replace("{username}", member.name)
-                        .replace("{inviter}", inviter_mention + invite_info)
+                        .replace("{inviter}", inviter_mention)
                         .replace("{total}", str(total_convites)))
-                    embed = build_embed(cfg["join_title"], body, cfg["join_color"],
-                        cfg["join_banner"],
-                        build_footer(cfg, member.guild),
-                        member.display_avatar.url)
-                    await canal.send(embed=embed)
+                    if cfg.get("msgs_formato_embed", 1):
+                        embed = build_embed(cfg["join_title"], body, cfg["join_color"],
+                            cfg["join_banner"],
+                            build_footer(cfg, member.guild),
+                            member.display_avatar.url)
+                        await canal.send(embed=embed)
+                    else:
+                        texto = build_plain_text(cfg["join_title"], body,
+                            build_footer(cfg, member.guild), cfg["join_banner"])
+                        await canal.send(content=texto)
 
             # ── Log de convite ──
             log_channel_id = cfg.get("log_channel_id")
@@ -1788,11 +1825,16 @@ async def setup(bot: commands.Bot):
                     body = (cfg["leave_body"]
                         .replace("{username}", member.name)
                         .replace("{inviter}", inviter_mention)) + fake_str
-                    embed = build_embed(cfg["leave_title"], body, cfg["leave_color"],
-                        cfg["leave_banner"],
-                        build_footer(cfg, member.guild),
-                        member.display_avatar.url)
-                    await canal.send(embed=embed)
+                    if cfg.get("msgs_formato_embed", 1):
+                        embed = build_embed(cfg["leave_title"], body, cfg["leave_color"],
+                            cfg["leave_banner"],
+                            build_footer(cfg, member.guild),
+                            member.display_avatar.url)
+                        await canal.send(embed=embed)
+                    else:
+                        texto = build_plain_text(cfg["leave_title"], body,
+                            build_footer(cfg, member.guild), cfg["leave_banner"])
+                        await canal.send(content=texto)
 
             # ── Log de saída ──
             log_channel_id = cfg.get("log_channel_id")
